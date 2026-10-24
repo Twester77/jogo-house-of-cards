@@ -1,0 +1,265 @@
+:root {
+    --bg-page: #0b0f19;
+    --bg-card-glass: rgba(22, 30, 46, 0.75);
+    --borda-dourada: #ffbc00;
+    --texto-primario: #f3f4f6;
+    --texto-secundario: #9ca3af;
+    --cor-erro: #ef4444;
+    --cor-sucesso: #10b981;
+
+    /* Variáveis dinâmicas usando cqi (baseado no container) */
+    --card-w: clamp(75px, 22cqi, 130px);
+    --card-h: clamp(110px, 32cqi, 195px);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif;
+    background: var(--bg-page);
+    color: var(--texto-primario);
+    min-height: 100dvh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 60px 12px 20px;
+    overflow-x: hidden;
+}
+
+/* 🔥 O CONTAINER QUERY FICA AQUI, NÃO NO BODY */
+.game-viewport { 
+    width: 100%; 
+    max-width: min(900px, 95vw); 
+    container-type: inline-size; /* Ativa o cqi baseado no tamanho desta div */
+    margin: 20px auto;
+}
+
+/* -------- Topo -------- */
+.topo-acoes {
+    position: fixed; top: 12px; right: 12px; left: 12px;
+    display: flex; justify-content: space-between; z-index: 1000;
+}
+.btn-top {
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(255, 188, 0, 0.3);
+    color: var(--borda-dourada);
+    padding: 8px 12px; border-radius: 20px;
+    max-width: clamp(150px, 15cqi, 400px);
+    font-size: clamp(0.8rem, 2.5cqi, 1.25rem); font-weight: 700; cursor: pointer;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+}
+.btn-top.danger { border-color: rgba(239, 68, 68, 0.4); color: var(--cor-erro); }
+
+.glass-card {
+    background: var(--bg-card-glass);
+    border: 1px solid rgba(255, 188, 0, 0.35);
+    border-radius: 24px;
+    padding: clamp(10px, 2.5cqi, 32px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+}
+.glass-card.dragging-active {
+    backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+    background: rgba(22, 30, 46, 0.98);
+}
+
+/* -------- Títulos & Botões -------- */
+h1 { font-size: clamp(1.4rem, 6cqi, 2.5rem); color: var(--borda-dourada); text-align: center; margin-bottom: 6px; text-shadow: 0 0 12px rgba(255, 188, 0, 0.3); }
+h2 { font-size: clamp(1rem, 4cqi, 1.6rem); text-align: center; margin-bottom: 12px; }
+.nome-destaque { color: var(--borda-dourada); }
+.subtext { font-size: clamp(0.8rem, 3cqi, 1.1rem); color: var(--texto-secundario); text-align: center; margin-bottom: 14px; line-height: 1.4; }
+
+.btn-fenda {
+    background: linear-gradient(135deg, #ffbc00, #d97706);
+    color: #000; border: none; padding: clamp(12px, 3cqi, 18px) 20px; font-weight: 800; border-radius: 12px;
+    cursor: pointer; width: 100%; font-size: clamp(0.85rem, 3.5cqi, 1.2rem);
+    margin-top: 10px; transition: all 0.2s; box-shadow: 0 4px 15px rgba(217, 119, 6, 0.3);
+}
+.btn-fenda:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-secundario { background: transparent; border: 1px solid var(--borda-dourada); color: var(--borda-dourada); box-shadow: none; }
+.btn-verdade { background: var(--cor-sucesso); color: #fff; }
+.btn-mentira, .btn-questionar { background: var(--cor-erro); color: #fff; margin-top: 8px; }
+.btn-acreditar { background: var(--cor-sucesso); color: #fff; margin-top: 8px; }
+
+/* -------- MESA & GAVETA -------- */
+.mesa {
+    position: relative;
+    width: 100%;
+    height: clamp(450px, 70vh, 700px);
+    margin: 12px 0;
+    touch-action: none;
+    user-select: none; -webkit-user-select: none;
+}
+
+.zona-jogo {
+    position: absolute;
+    top: 0; left: 50%; transform: translateX(-50%);
+    width: 95%; max-width: 600px; height: 180px;
+    background: rgba(255, 188, 0, 0.05);
+    border: 2px dashed rgba(255, 188, 0, 0.35);
+    border-radius: 16px;
+    display: flex; justify-content: center; align-items: center;
+    transition: all 0.3s;
+}
+.zona-jogo.zona-ativa {
+    background: rgba(255, 188, 0, 0.15);
+    border-color: rgba(255, 188, 0, 0.8);
+    box-shadow: 0 0 20px rgba(255, 188, 0, 0.2);
+}
+.zona-hint {
+    font-size: clamp(0.9rem, 3cqi, 1.2rem); color: rgba(255, 188, 0, 0.7);
+    text-align: center; pointer-events: none;
+}
+
+.leque-container {
+    position: absolute;
+    bottom: 10px; left: 0; width: 100%; height: 220px;
+}
+
+/* Cartas */
+.carta-card {
+    position: absolute;
+    left: 50%; bottom: 0;
+    width: var(--card-w);
+    height: var(--card-h);
+    margin-left: calc(var(--card-w) / -2);
+    background: rgba(30, 41, 59, 0.95);
+    border: 2px solid #475569; border-radius: 14px;
+    display: flex; flex-direction: column;
+    justify-content: space-between; align-items: center;
+    padding: clamp(8px, 3cqi, 16px) 6px; cursor: grab;
+    
+    /* MOLA DO RETORNO (Cubic Bezier Safadinho kkk) */
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+                border-color 0.2s, box-shadow 0.2s, background 0.2s;
+                
+    transform-origin: center bottom;
+    will-change: transform;
+    touch-action: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    animation: distribuirCarta 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.carta-card:nth-child(1) { animation-delay: 0.1s; }
+.carta-card:nth-child(2) { animation-delay: 0.2s; }
+.carta-card:nth-child(3) { animation-delay: 0.3s; }
+.carta-card:nth-child(4) { animation-delay: 0.4s; }
+.carta-card:nth-child(5) { animation-delay: 0.5s; }
+.carta-card:nth-child(6) { animation-delay: 0.6s; }
+.carta-card:nth-child(7) { animation-delay: 0.7s; }
+.carta-card:nth-child(8) { animation-delay: 0.8s; }
+.carta-card:nth-child(9) { animation-delay: 0.9s; }
+.carta-card:nth-child(10){ animation-delay: 1.0s; }
+.carta-card:nth-child(11){ animation-delay: 1.1s; }
+
+@keyframes distribuirCarta {
+    0% { opacity: 0; transform: translate(0, -400px) scale(0.5) rotate(0deg); }
+    100% { opacity: 1; }
+}
+
+.carta-card:hover { border-color: rgba(255, 188, 0, 0.6); }
+.carta-card.arrastando {
+    transition: none !important; /* Sem mola enquanto arrasta */
+    cursor: grabbing; z-index: 9999 !important;
+    border-color: var(--borda-dourada);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6), 0 0 20px rgba(255, 188, 0, 0.4);
+}
+.carta-card[data-location="play"] {
+    border-color: var(--borda-dourada);
+    background: rgba(51, 65, 85, 0.98);
+    box-shadow: 0 8px 20px rgba(255, 188, 0, 0.3);
+}
+
+.carta-card .emoji-carta { font-size: clamp(1.8rem, 8cqi, 3rem); margin-top: 10px; }
+.carta-card .nome-carta { font-size: clamp(0.65rem, 3cqi, 0.95rem); font-weight: 700; text-align: center; }
+.carta-card .carta-canto { position: absolute; top: 8px; left: 10px; font-size: clamp(0.8rem, 3cqi, 1.2rem); font-weight: 900; color: var(--borda-dourada); opacity: 0.85; }
+
+/* Ocultar */
+.mesa-oculta .carta-card { filter: blur(10px); pointer-events: none; opacity: 0.3 !important; }
+.mesa-oculta .zona-jogo { pointer-events: none; opacity: 0.3; }
+
+/* Painel Oculto */
+.painel-oculto-alerta {
+    position: absolute; inset: 0;
+    background: rgba(11, 15, 25, 0.6);
+    backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+    z-index: 50; display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    border-radius: 16px; text-align: center;
+    pointer-events: none;
+}
+.lock-icon { font-size: clamp(2.5rem, 8cqi, 4rem); margin-bottom: 8px; display: block; }
+.lock-titulo { font-weight: 700; font-size: clamp(1rem, 4cqi, 1.4rem); margin-bottom: 6px; }
+.lock-subtext { font-size: clamp(0.8rem, 3cqi, 1rem); color: var(--texto-secundario); }
+
+/* Dicas Flutuantes */
+.dica-flutuante {
+    text-align: center; font-size: clamp(0.8rem, 3cqi, 1.1rem); font-weight: 700;
+    color: var(--borda-dourada);
+    background: rgba(255, 188, 0, 0.1);
+    padding: 10px; border-radius: 8px;
+    margin-bottom: 8px; animation: pulseDica 2s infinite ease-in-out;
+}
+@keyframes pulseDica {
+    0%, 100% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.02); opacity: 1; }
+}
+
+/* 🔥 POPUP DE EVENTO (BLEFE / VERDADE) */
+.popup-evento {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0.2) rotate(-15deg);
+    font-size: clamp(3rem, 12vw, 8rem);
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    z-index: 99999;
+    pointer-events: none;
+    text-align: center;
+    opacity: 0;
+    text-shadow: 0 10px 40px rgba(0,0,0,0.8), 0 0 20px rgba(255,255,255,0.2);
+    animation: popEvento 2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.popup-evento.blefe { color: var(--cor-erro); }
+.popup-evento.verdade { color: var(--cor-sucesso); }
+
+@keyframes popEvento {
+    0% { transform: translate(-50%, -50%) scale(0.2) rotate(-15deg); opacity: 0; }
+    20% { transform: translate(-50%, -50%) scale(1.1) rotate(5deg); opacity: 1; }
+    35% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; }
+    80% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; }
+    100% { transform: translate(-50%, -80%) scale(0.8) rotate(0deg); opacity: 0; }
+}
+
+/* Modal de Regras & Outros */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(5px); z-index: 9999; display: none; justify-content: center; align-items: center; padding: 20px; }
+.modal-overlay.aberto { display: flex; }
+.modal-card { background: #161e2e; border: 1px solid var(--borda-dourada); border-radius: 20px; padding: 24px; width: 100%; max-width: 500px; box-shadow: 0 15px 35px rgba(0,0,0,0.8); animation: subirModal 0.3s ease-out forwards; }
+@keyframes subirModal { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.regras-texto { font-size: clamp(0.9rem, 3cqi, 1rem); line-height: 1.5; color: var(--texto-secundario); margin: 15px 0; }
+.regras-texto ul { padding-left: 20px; margin-top: 10px; }
+.regras-texto li { margin-bottom: 8px; }
+.regras-texto b { color: var(--texto-primario); }
+.regra-dica { background: rgba(255,188,0,0.1); padding: 10px; border-radius: 8px; margin-top: 15px; color: var(--borda-dourada); }
+
+.info-mesa { background: rgba(15, 23, 42, 0.65); border-left: 3px solid var(--borda-dourada); border-radius: 10px; padding: clamp(10px, 3cqi, 16px); margin-bottom: 12px; font-size: clamp(0.8rem, 3cqi, 1rem); }
+.info-manilha { text-align: center; border-bottom: 1px solid rgba(255, 188, 0, 0.15); padding-bottom: 8px; margin-bottom: 8px; color: var(--borda-dourada); font-weight: bold; font-size: clamp(0.9rem, 3.5cqi, 1.2rem); }
+.info-jogadores { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.info-jogador { padding: 8px; border-radius: 8px; background: rgba(255, 255, 255, 0.03); border: 1px solid transparent; text-align: center; }
+.info-jogador.destaque { background: rgba(255, 188, 0, 0.12); border-color: rgba(255, 188, 0, 0.4); }
+.info-jogador .nome { display: block; font-weight: 700; font-size: clamp(0.8rem, 3cqi, 1rem); }
+.info-jogador .stats { display: block; font-size: clamp(0.7rem, 2.5cqi, 0.9rem); color: var(--texto-secundario); }
+
+.btn-revelar { background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255, 188, 0, 0.4); color: var(--borda-dourada); padding: 12px; border-radius: 10px; font-size: clamp(0.8rem, 3cqi, 1rem); font-weight: 700; cursor: pointer; width: 100%; margin-bottom: 10px; }
+.msg-resultado { background: rgba(30, 27, 75, 0.85); border: 1px solid #6366f1; padding: 12px; border-radius: 8px; margin-bottom: 12px; font-size: clamp(0.8rem, 3cqi, 1rem); text-align: center; }
+.cartas-descartadas-display { display: flex; gap: 12px; justify-content: center; margin: 16px 0; flex-wrap: wrap; }
+.carta-mini { background: rgba(51, 65, 85, 0.95); border: 2px solid var(--borda-dourada); border-radius: 12px; padding: 12px; font-size: clamp(0.7rem, 2.5cqi, 0.9rem); font-weight: 700; text-align: center; min-width: 80px; }
+input[type="text"] { width: 100%; padding: 12px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 8px; margin-bottom: 12px; font-size: clamp(0.9rem, 3cqi, 1rem); }
+.label-jogador { display: block; font-size: clamp(0.8rem, 3cqi, 1rem); color: var(--texto-secundario); margin-bottom: 4px; }
+.questionar-box { text-align: center; }
+.declaracao-texto { color: var(--borda-dourada); margin-bottom: 15px; font-size: clamp(1.2rem, 5cqi, 1.8rem); }
+.vitoria-titulo { font-size: clamp(2rem, 8cqi, 3rem); }
+.vitoria-nome { color: var(--cor-sucesso); margin-bottom: 20px; font-size: clamp(1.4rem, 5cqi, 2rem); }
